@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SimulationConfig } from '../types';
 import { runBandwidthSimulation } from '../utils/simulation';
+import type { Language } from '../utils/i18n';
 import { TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface BandwidthChartProps {
@@ -8,13 +9,15 @@ interface BandwidthChartProps {
   packedSize: number;
   jsonSize: number;
   rawSize: number;
+  lang: Language;
 }
 
 export const BandwidthChart: React.FC<BandwidthChartProps> = ({
   config,
   packedSize,
   jsonSize,
-  rawSize
+  rawSize,
+  lang
 }) => {
   // We will simulate bandwidth from 2 to 100 players to draw the trend line
   const playerSteps = [2, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -92,19 +95,22 @@ export const BandwidthChart: React.FC<BandwidthChartProps> = ({
     <div className="glass-card panel-chart">
       <div className="panel-header">
         <TrendingUp className="header-icon text-glow-cyan" />
-        <h2>Server Egress Scaling (O(N²))</h2>
+        <h2>{lang === 'ru' ? 'Исходящий трафик сервера (O(N²))' : 'Server Egress Scaling (O(N²))'}</h2>
       </div>
 
       <p className="panel-description">
-        Server upload bandwidth grows quadratically in games. See how optimized bitpacking stops netcode from bottlenecking.
+        {lang === 'ru' 
+          ? 'Исходящий трафик сервера растет квадратично. Посмотрите, как упаковка бит спасает сеть от перегрузок.'
+          : 'Server upload bandwidth grows quadratically in games. See how optimized bitpacking stops netcode from bottlenecking.'
+        }
       </p>
 
       {/* Savings badge */}
       <div className="savings-badge-container anim-fade-in">
-        <span className="savings-title">BitPacker Savings:</span>
+        <span className="savings-title">{lang === 'ru' ? 'Экономия трафика:' : 'BitPacker Savings:'}</span>
         <span className="savings-percentage text-glow-emerald">-{savedPercent}%</span>
         <span className="savings-sub font-mono">
-          ({formatBandwidth(currentJson)} vs {formatBandwidth(currentBitPacked)})
+          ({formatBandwidth(currentJson)} {lang === 'ru' ? 'против' : 'vs'} {formatBandwidth(currentBitPacked)})
         </span>
       </div>
 
@@ -187,15 +193,15 @@ export const BandwidthChart: React.FC<BandwidthChartProps> = ({
       <div className="chart-legend-container font-mono text-sm">
         <div className="legend-item">
           <span className="legend-dot bg-cyan"></span>
-          <span>BitPacked: <strong>{formatBandwidth(currentBitPacked)}</strong></span>
+          <span>{lang === 'ru' ? 'Сжатый пакет (BitPacked):' : 'BitPacked:'} <strong>{formatBandwidth(currentBitPacked)}</strong></span>
         </div>
         <div className="legend-item">
           <span className="legend-dot bg-amber"></span>
-          <span>Raw Replication: <strong>{formatBandwidth(currentRaw)}</strong></span>
+          <span>{lang === 'ru' ? 'Обычная репликация:' : 'Raw Replication:'} <strong>{formatBandwidth(currentRaw)}</strong></span>
         </div>
         <div className="legend-item">
           <span className="legend-dot bg-rose"></span>
-          <span>JSON String: <strong>{formatBandwidth(currentJson)}</strong></span>
+          <span>{lang === 'ru' ? 'Строка JSON:' : 'JSON String:'} <strong>{formatBandwidth(currentJson)}</strong></span>
         </div>
       </div>
 
@@ -203,7 +209,11 @@ export const BandwidthChart: React.FC<BandwidthChartProps> = ({
         <div className="alert-box alert-danger font-sm margin-t-10">
           <AlertTriangle size={16} className="alert-icon" />
           <div className="alert-text">
-            <strong>Network Congestion Warning:</strong> Under JSON replication, server output exceeds 50 Mbps. This will bottleneck client connections and cause severe latency jitter or packet drop.
+            <strong>{lang === 'ru' ? 'Внимание, сетевая перегрузка:' : 'Network Congestion Warning:'}</strong>{' '}
+            {lang === 'ru' 
+              ? 'При репликации в JSON исходящий трафик превышает 50 Мбит/с. Это перегрузит каналы игроков и вызовет серьезные лаги/потери пакетов.'
+              : 'Under JSON replication, server output exceeds 50 Mbps. This will bottleneck client connections and cause severe latency jitter or packet drop.'
+            }
           </div>
         </div>
       )}

@@ -3,17 +3,21 @@ import type { PacketField } from '../types';
 import { generateRobloxCode } from '../utils/generators/roblox';
 import { generateSboxCode } from '../utils/generators/sbox';
 import { generateUnityCode } from '../utils/generators/unity';
+import { translations, type Language } from '../utils/i18n';
 import { Code, Copy, Check, Terminal } from 'lucide-react';
 
 interface CodeGeneratorProps {
   fields: PacketField[];
+  lang: Language;
 }
 
 type TabName = 'roblox' | 'sbox' | 'unity';
 
-export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields }) => {
+export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields, lang }) => {
   const [activeTab, setActiveTab] = useState<TabName>('roblox');
   const [copied, setCopied] = useState(false);
+
+  const t = translations[lang];
 
   const getGeneratedCode = () => {
     switch (activeTab) {
@@ -49,11 +53,11 @@ export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields }) => {
     <div className="glass-card panel-codegen">
       <div className="panel-header">
         <Code className="header-icon text-glow-purple" />
-        <h2>Generated Serialization Code</h2>
+        <h2>{t.codegenTitle}</h2>
       </div>
 
       <p className="panel-description">
-        Instantly compile your packet design into optimal code for your target game engine.
+        {t.codegenDesc}
       </p>
 
       {/* Tabs */}
@@ -63,21 +67,21 @@ export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields }) => {
           onClick={() => setActiveTab('roblox')}
           type="button"
         >
-          Roblox (Luau)
+          {t.tabRoblox}
         </button>
         <button
           className={`tab-btn ${activeTab === 'sbox' ? 'active-tab border-sbox' : ''}`}
           onClick={() => setActiveTab('sbox')}
           type="button"
         >
-          s&box (C#)
+          {t.tabSbox}
         </button>
         <button
           className={`tab-btn ${activeTab === 'unity' ? 'active-tab border-unity' : ''}`}
           onClick={() => setActiveTab('unity')}
           type="button"
         >
-          Unity (C#)
+          {t.tabUnity}
         </button>
       </div>
 
@@ -86,7 +90,7 @@ export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields }) => {
         <div className="console-header">
           <div className="console-info">
             <Terminal size={14} className="text-muted" />
-            <span className="font-mono text-xs">{getLanguageLabel()} Serializer</span>
+            <span className="font-mono text-xs">{getLanguageLabel()} {lang === 'ru' ? 'Сериализатор' : 'Serializer'}</span>
           </div>
           <button
             onClick={handleCopy}
@@ -96,12 +100,12 @@ export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields }) => {
             {copied ? (
               <>
                 <Check size={14} className="margin-r-5" />
-                Copied!
+                {t.copiedBtn}
               </>
             ) : (
               <>
                 <Copy size={14} className="margin-r-5" />
-                Copy Code
+                {t.copyBtn}
               </>
             )}
           </button>
@@ -109,7 +113,10 @@ export const CodeGenerator: React.FC<CodeGeneratorProps> = ({ fields }) => {
         <div className="console-body">
           {fields.length === 0 ? (
             <div className="empty-state font-mono text-sm">
-              // Schema is empty. Define variables in the Packet Schema Designer to compile serialization code.
+              {lang === 'ru' 
+                ? '// Схема пуста. Добавьте переменные в Конструкторе Сетевого Пакета для генерации кода.'
+                : '// Schema is empty. Define variables in the Packet Schema Designer to compile serialization code.'
+              }
             </div>
           ) : (
             <pre className="code-block font-mono text-sm">

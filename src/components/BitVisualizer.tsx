@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import type { PacketField } from '../types';
 import { calculatePacketLayout } from '../utils/bitPacking';
 import type { FieldLayoutInfo } from '../utils/bitPacking';
+import { translations, type Language } from '../utils/i18n';
 import { Eye, ShieldAlert, Info } from 'lucide-react';
 
 interface BitVisualizerProps {
   fields: PacketField[];
+  lang: Language;
 }
 
 // Curated modern neon color palette for fields
@@ -20,7 +22,7 @@ const FIELD_COLORS = [
   'var(--orange-glow)'
 ];
 
-export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
+export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields, lang }) => {
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null);
   const [hoveredBitInfo, setHoveredBitInfo] = useState<{
     byteIndex: number;
@@ -30,6 +32,7 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
     fieldType: string;
   } | null>(null);
 
+  const t = translations[lang];
   const { layoutFields, totalBits, totalBytes, paddingBits } = calculatePacketLayout(fields);
 
   // Map each global bit index (0 to totalBytes*8 - 1) to its field layout info
@@ -51,31 +54,38 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
     <div className="glass-card panel-visualizer">
       <div className="panel-header">
         <Eye className="header-icon text-glow-emerald" />
-        <h2>Bit-Layout Visualizer</h2>
+        <h2>{t.visualizerTitle}</h2>
       </div>
 
       <p className="panel-description">
-        Observe how variables map into physical byte boundaries. Align to 8-bit blocks to minimize padding.
+        {t.visualizerDesc}
       </p>
 
       {/* Metrics Row */}
       <div className="visualizer-stats">
         <div className="stat-card">
-          <span className="stat-label">Total Size</span>
-          <span className="stat-value font-mono text-glow-cyan">{totalBytes} <span className="stat-unit">Bytes</span></span>
-          <span className="stat-desc font-mono">{totalBits} bits</span>
+          <span className="stat-label">{t.totalSize}</span>
+          <span className="stat-value font-mono text-glow-cyan">{totalBytes} <span className="stat-unit">{lang === 'ru' ? 'Байт' : 'Bytes'}</span></span>
+          <span className="stat-desc font-mono">{totalBits} {lang === 'ru' ? 'бит' : 'bits'}</span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Padding / Waste</span>
+          <span className="stat-label">{t.padding} / {lang === 'ru' ? 'Пустота' : 'Waste'}</span>
           <span className={`stat-value font-mono ${paddingBits > 0 ? 'text-amber' : 'text-emerald'}`}>
-            {paddingBits} <span className="stat-unit">bits</span>
+            {paddingBits} <span className="stat-unit">{lang === 'ru' ? 'бит' : 'bits'}</span>
           </span>
-          <span className="stat-desc font-mono">{(totalBytes * 8 - totalBits) > 0 ? `${(paddingBits / 8).toFixed(2)} bytes` : 'Perfect alignment'}</span>
+          <span className="stat-desc font-mono">
+            {paddingBits > 0 
+              ? `${(paddingBits / 8).toFixed(2)} ${lang === 'ru' ? 'байт' : 'bytes'}` 
+              : (lang === 'ru' ? 'Идеальное выравнивание' : 'Perfect alignment')
+            }
+          </span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Packing Efficiency</span>
+          <span className="stat-label">{t.efficiency}</span>
           <span className="stat-value font-mono text-glow-emerald">{efficiency}%</span>
-          <span className="stat-desc">Bits utilized vs allocated</span>
+          <span className="stat-desc">
+            {lang === 'ru' ? 'Полезных бит к выделенным' : 'Bits utilized vs allocated'}
+          </span>
         </div>
       </div>
 
@@ -83,7 +93,7 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
       <div className="bytes-grid-wrapper">
         {totalBytes === 0 ? (
           <div className="empty-state min-h-200">
-            <p>Add schema fields to visualize the bit stream layout.</p>
+            <p>{lang === 'ru' ? 'Добавьте поля схемы для визуализации структуры битового потока.' : 'Add schema fields to visualize the bit stream layout.'}</p>
           </div>
         ) : (
           <div className="bytes-grid">
@@ -93,8 +103,8 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
               return (
                 <div key={byteIdx} className="byte-block">
                   <div className="byte-label">
-                    <span>Byte {byteIdx}</span>
-                    <span className="byte-range-label">Bits {startBit + 7}-{startBit}</span>
+                    <span>{lang === 'ru' ? `Байт ${byteIdx}` : `Byte ${byteIdx}`}</span>
+                    <span className="byte-range-label">{lang === 'ru' ? `Биты ${startBit + 7}-${startBit}` : `Bits ${startBit + 7}-${startBit}`}</span>
                   </div>
                   <div className="bits-row">
                     {/* Render bits from MSB to LSB (left to right: bit 7 down to bit 0 of the byte) */}
@@ -104,8 +114,8 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
                       const isPadding = globalBitIdx >= totalBits;
                       const matchingField = bitMap[globalBitIdx];
                       const fieldIndex = matchingField 
-                        ? layoutFields.findIndex(f => f.id === matchingField.id) 
-                        : -1;
+                         ? layoutFields.findIndex(f => f.id === matchingField.id) 
+                         : -1;
                       
                       const color = !isPadding && fieldIndex !== -1 
                         ? FIELD_COLORS[fieldIndex % FIELD_COLORS.length] 
@@ -136,7 +146,7 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
                                 byteIndex: byteIdx,
                                 bitIndex: bitIdxFromMsb,
                                 globalBitIndex: globalBitIdx,
-                                fieldName: 'Padding',
+                                fieldName: lang === 'ru' ? 'Выравнивание' : 'Padding',
                                 fieldType: 'waste'
                               });
                             }
@@ -163,17 +173,24 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
         {hoveredBitInfo ? (
           <div className="tooltip-content anim-fade-in">
             <span className="tooltip-bit-details">
-              Byte {hoveredBitInfo.byteIndex}, Bit {hoveredBitInfo.bitIndex} (Global Bit {hoveredBitInfo.globalBitIndex})
+              {lang === 'ru' 
+                ? `Байт ${hoveredBitInfo.byteIndex}, Бит ${hoveredBitInfo.bitIndex} (Глобальный бит ${hoveredBitInfo.globalBitIndex})`
+                : `Byte ${hoveredBitInfo.byteIndex}, Bit ${hoveredBitInfo.bitIndex} (Global Bit ${hoveredBitInfo.globalBitIndex})`
+              }
             </span>
             <span className="tooltip-divider">|</span>
             <span className="tooltip-field-details">
-              Field: <strong className={`text-${hoveredBitInfo.fieldType}`}>{hoveredBitInfo.fieldName}</strong> ({hoveredBitInfo.fieldType})
+              {lang === 'ru' ? 'Поле: ' : 'Field: '}
+              <strong className={`text-${hoveredBitInfo.fieldType}`}>{hoveredBitInfo.fieldName}</strong> ({hoveredBitInfo.fieldType})
             </span>
           </div>
         ) : (
           <div className="tooltip-content text-muted">
             <Info size={14} className="margin-r-5" />
-            Hover over bits to inspect properties and offsets.
+            {lang === 'ru' 
+              ? 'Наведите курсор на биты, чтобы просмотреть их свойства и смещения.'
+              : 'Hover over bits to inspect properties and offsets.'
+            }
           </div>
         )}
       </div>
@@ -183,7 +200,11 @@ export const BitVisualizer: React.FC<BitVisualizerProps> = ({ fields }) => {
         <div className="alert-box alert-warning font-sm">
           <ShieldAlert size={16} className="alert-icon" />
           <div className="alert-text">
-            <strong>Byte Boundary Padding:</strong> You have {paddingBits} unused padding bits at the end of the packet. Adding a boolean or fitting other values can utilize this space with zero extra bandwidth cost!
+            <strong>{lang === 'ru' ? 'Неиспользуемое пространство пакета:' : 'Byte Boundary Padding:'}</strong>{' '}
+            {lang === 'ru' 
+              ? `В конце пакета осталось ${paddingBits} неиспользуемых бит. Добавление bool-переменных или квантование чисел поможет занять это место без увеличения размера сетевого кадра!`
+              : `You have ${paddingBits} unused padding bits at the end of the packet. Adding a boolean or fitting other values can utilize this space with zero extra bandwidth cost!`
+            }
           </div>
         </div>
       )}

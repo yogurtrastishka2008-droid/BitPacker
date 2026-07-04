@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import type { PacketField, FieldType, FloatType, VectorType, StringType } from '../types';
 import { getFieldBitWidth } from '../utils/bitPacking';
+import { translations, type Language } from '../utils/i18n';
 import { Plus, Trash2, ArrowUp, ArrowDown, Settings2, Info } from 'lucide-react';
 
 interface PacketEditorProps {
   fields: PacketField[];
   onFieldsChange: (fields: PacketField[]) => void;
+  lang: Language;
 }
 
 const RESERVED_KEYWORDS = new Set([
@@ -16,9 +18,11 @@ const RESERVED_KEYWORDS = new Set([
   'import', 'export', 'type', 'new', 'get', 'set', 'vector3.new', 'vector3.zero'
 ]);
 
-export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChange }) => {
+export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChange, lang }) => {
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldType>('int');
+  
+  const t = translations[lang];
 
   const addField = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +31,16 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
     // Check for duplicate names
     const cleanName = newFieldName.trim().replace(/\s+/g, '_');
     if (fields.some(f => f.name.toLowerCase() === cleanName.toLowerCase())) {
-      alert('A field with this name already exists.');
+      alert(lang === 'ru' ? 'Поле с таким именем уже существует.' : 'A field with this name already exists.');
       return;
     }
 
     // Check for reserved keywords
     if (RESERVED_KEYWORDS.has(cleanName.toLowerCase())) {
-      alert(`"${cleanName}" is a reserved programming keyword or serialization method. Please use another name.`);
+      alert(lang === 'ru' 
+        ? `"${cleanName}" является зарезервированным ключевым словом. Пожалуйста, выберите другое имя.`
+        : `"${cleanName}" is a reserved programming keyword or serialization method. Please use another name.`
+      );
       return;
     }
 
@@ -101,11 +108,11 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
     <div className="glass-card panel-editor">
       <div className="panel-header">
         <Settings2 className="header-icon text-glow-cyan" />
-        <h2>Packet Schema Designer</h2>
+        <h2>{t.editorTitle}</h2>
       </div>
       
       <p className="panel-description">
-        Define your network variables and specify their bit-level compression rules.
+        {t.editorDesc}
       </p>
 
       {/* Field Creator Form */}
@@ -113,7 +120,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
         <div className="form-group flex-1">
           <input
             type="text"
-            placeholder="Field Name (e.g. position, ammo)"
+            placeholder={t.fieldNamePlaceholder}
             value={newFieldName}
             onChange={(e) => setNewFieldName(e.target.value)}
             className="input-text"
@@ -127,16 +134,16 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
             onChange={(e) => setNewFieldType(e.target.value as FieldType)}
             className="input-select"
           >
-            <option value="int">Integer (bits/range)</option>
-            <option value="bool">Boolean (1 bit)</option>
-            <option value="float">Float (IEEE/Quantized)</option>
-            <option value="vector3">Vector3 (3D coords)</option>
-            <option value="string">String (UTF-8)</option>
+            <option value="int">{t.fieldTypeInt}</option>
+            <option value="bool">{t.fieldTypeBool}</option>
+            <option value="float">{t.fieldTypeFloat}</option>
+            <option value="vector3">{t.fieldTypeVector}</option>
+            <option value="string">{t.fieldTypeString}</option>
           </select>
         </div>
         <button type="submit" className="btn btn-add">
           <Plus size={18} />
-          <span>Add</span>
+          <span>{t.btnAdd}</span>
         </button>
       </form>
 
@@ -145,7 +152,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
         {fields.length === 0 ? (
           <div className="empty-state">
             <Info size={24} className="text-muted" />
-            <p>No fields defined yet. Add your first field above to begin packing.</p>
+            <p>{t.noFields}</p>
           </div>
         ) : (
           fields.map((field, index) => {
@@ -163,7 +170,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                       onClick={() => moveField(index, 'up')}
                       disabled={index === 0}
                       className="btn-icon"
-                      title="Move Up"
+                      title={t.moveUp}
                       type="button"
                     >
                       <ArrowUp size={16} />
@@ -172,7 +179,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                       onClick={() => moveField(index, 'down')}
                       disabled={index === fields.length - 1}
                       className="btn-icon"
-                      title="Move Down"
+                      title={t.moveDown}
                       type="button"
                     >
                       <ArrowDown size={16} />
@@ -180,7 +187,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                     <button
                       onClick={() => removeField(field.id)}
                       className="btn-icon btn-danger"
-                      title="Remove Field"
+                      title={t.removeField}
                       type="button"
                     >
                       <Trash2 size={16} />
@@ -193,7 +200,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                   {field.type === 'int' && (
                     <div className="config-grid">
                       <div className="config-item">
-                        <label>Min Value</label>
+                        <label>{t.minValue}</label>
                         <input
                           type="number"
                           value={field.minValue ?? ''}
@@ -202,7 +209,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                         />
                       </div>
                       <div className="config-item">
-                        <label>Max Value</label>
+                        <label>{t.maxValue}</label>
                         <input
                           type="number"
                           value={field.maxValue ?? ''}
@@ -212,7 +219,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                       </div>
                       {field.minValue === undefined || field.maxValue === undefined ? (
                         <div className="config-item">
-                          <label>Static Bit Width</label>
+                          <label>{t.staticBitWidth}</label>
                           <input
                             type="number"
                             min="1"
@@ -224,7 +231,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                         </div>
                       ) : (
                         <div className="config-item value-preview">
-                          <label>Auto Bits</label>
+                          <label>{t.autoBits}</label>
                           <div className="preview-box font-mono">{calculatedWidth} bits</div>
                         </div>
                       )}
@@ -235,21 +242,21 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                   {field.type === 'float' && (
                     <div className="config-grid">
                       <div className="config-item">
-                        <label>Encoding</label>
+                        <label>{t.encoding}</label>
                         <select
                           value={field.floatType || 'single'}
                           onChange={(e) => updateField(field.id, { floatType: e.target.value as FloatType })}
                           className="input-select-compact"
                         >
-                          <option value="single">Single Float (32-bit)</option>
-                          <option value="half">Half Float (16-bit)</option>
-                          <option value="quantized">Quantized Range</option>
+                          <option value="single">{t.floatSingle}</option>
+                          <option value="half">{t.floatHalf}</option>
+                          <option value="quantized">{t.floatQuantized}</option>
                         </select>
                       </div>
                       {field.floatType === 'quantized' && (
                         <>
                           <div className="config-item">
-                            <label>Min</label>
+                            <label>{t.minValue}</label>
                             <input
                               type="number"
                               step="any"
@@ -259,7 +266,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                             />
                           </div>
                           <div className="config-item">
-                            <label>Max</label>
+                            <label>{t.maxValue}</label>
                             <input
                               type="number"
                               step="any"
@@ -269,7 +276,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                             />
                           </div>
                           <div className="config-item">
-                            <label>Precision (Step)</label>
+                            <label>{t.precision}</label>
                             <input
                               type="number"
                               step="any"
@@ -283,7 +290,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                         </>
                       )}
                       <div className="config-item value-preview">
-                        <label>Size Allocation</label>
+                        <label>{t.sizeAllocation}</label>
                         <div className="preview-box font-mono">{calculatedWidth} bits</div>
                       </div>
                     </div>
@@ -293,20 +300,20 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                   {field.type === 'vector3' && (
                     <div className="config-grid">
                       <div className="config-item">
-                        <label>Encoding</label>
+                        <label>{t.encoding}</label>
                         <select
                           value={field.vectorType || 'full'}
                           onChange={(e) => updateField(field.id, { vectorType: e.target.value as VectorType })}
                           className="input-select-compact"
                         >
-                          <option value="full">Full (96-bit)</option>
-                          <option value="quantized">Quantized Bounds</option>
+                          <option value="full">{t.vectorFull}</option>
+                          <option value="quantized">{t.vectorQuantized}</option>
                         </select>
                       </div>
                       {field.vectorType === 'quantized' && (
                         <>
                           <div className="config-item">
-                            <label>Min (XYZ Bound)</label>
+                            <label>{t.minValue} (XYZ)</label>
                             <input
                               type="number"
                               step="any"
@@ -316,7 +323,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                             />
                           </div>
                           <div className="config-item">
-                            <label>Max (XYZ Bound)</label>
+                            <label>{t.maxValue} (XYZ)</label>
                             <input
                               type="number"
                               step="any"
@@ -326,7 +333,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                             />
                           </div>
                           <div className="config-item">
-                            <label>Precision (Step)</label>
+                            <label>{t.precision}</label>
                             <input
                               type="number"
                               step="any"
@@ -340,7 +347,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                         </>
                       )}
                       <div className="config-item value-preview">
-                        <label>Size Allocation</label>
+                        <label>{t.sizeAllocation}</label>
                         <div className="preview-box font-mono">{calculatedWidth} bits</div>
                       </div>
                     </div>
@@ -350,18 +357,18 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                   {field.type === 'string' && (
                     <div className="config-grid">
                       <div className="config-item">
-                        <label>Length Type</label>
+                        <label>{t.lengthType}</label>
                         <select
                           value={field.stringType || 'dynamic'}
                           onChange={(e) => updateField(field.id, { stringType: e.target.value as StringType })}
                           className="input-select-compact"
                         >
-                          <option value="dynamic">Dynamic (Header length)</option>
-                          <option value="fixed">Fixed size</option>
+                          <option value="dynamic">{t.stringDynamic}</option>
+                          <option value="fixed">{t.stringFixed}</option>
                         </select>
                       </div>
                       <div className="config-item">
-                        <label>Max Char Length</label>
+                        <label>{t.maxCharLength}</label>
                         <input
                           type="number"
                           min="1"
@@ -372,7 +379,7 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                         />
                       </div>
                       <div className="config-item value-preview">
-                        <label>Size Allocation</label>
+                        <label>{t.sizeAllocation}</label>
                         <div className="preview-box font-mono">{calculatedWidth} bits</div>
                       </div>
                     </div>
@@ -381,9 +388,9 @@ export const PacketEditor: React.FC<PacketEditorProps> = ({ fields, onFieldsChan
                   {/* BOOLEAN CONFIG */}
                   {field.type === 'bool' && (
                     <div className="config-grid-bool">
-                      <span className="text-muted text-sm">Booleans are packed as a single bit (1/8th of a byte) alongside adjacent variables.</span>
+                      <span className="text-muted text-sm">{t.boolNotice}</span>
                       <div className="config-item value-preview text-right">
-                        <label>Size Allocation</label>
+                        <label>{t.sizeAllocation}</label>
                         <div className="preview-box font-mono inline-block">1 bit</div>
                       </div>
                     </div>
